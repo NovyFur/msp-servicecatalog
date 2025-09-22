@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -70,6 +71,26 @@
             background: #2563eb;
         }
         
+        .btn-success {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            border-color: #ef4444;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
         .tabs {
             display: flex;
             border-bottom: 1px solid #e2e8f0;
@@ -92,7 +113,7 @@
         
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr ));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
@@ -138,7 +159,7 @@
         
         .service-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 1rem;
         }
@@ -191,6 +212,16 @@
             color: #374151;
         }
         
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
         .service-actions {
             display: flex;
             gap: 0.5rem;
@@ -209,6 +240,7 @@
             gap: 1rem;
             margin-bottom: 2rem;
             align-items: center;
+            flex-wrap: wrap;
         }
         
         .search-input {
@@ -242,7 +274,7 @@
             background: white;
             border-radius: 0.5rem;
             padding: 2rem;
-            max-width: 500px;
+            max-width: 600px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
@@ -296,13 +328,135 @@
             flex-wrap: wrap;
             margin-top: 0.5rem;
         }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .table tbody tr:hover {
+            background: #f8fafc;
+        }
+        
+        .client-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .client-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .client-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .client-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+        
+        .info-value {
+            font-weight: 500;
+        }
+        
+        .chart-container {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .report-filters {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-input {
+                min-width: auto;
+            }
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
         // Sample data
         const initialServices = [
@@ -344,30 +498,103 @@
             }
         ];
 
+        const initialClients = [
+            {
+                id: '1',
+                companyName: 'Acme Corporation',
+                contactName: 'John Smith',
+                email: 'john.smith@acme.com',
+                phone: '(555) 123-4567',
+                address: '123 Business St, City, ST 12345',
+                industry: 'Manufacturing',
+                employees: 50,
+                status: 'active',
+                contractStart: '2024-01-15',
+                contractEnd: '2024-12-31',
+                monthlyValue: 2500,
+                services: ['1', '2', '3'],
+                notes: 'Primary contact prefers email communication. Monthly review meetings scheduled for first Tuesday of each month.'
+            },
+            {
+                id: '2',
+                companyName: 'Tech Innovations LLC',
+                contactName: 'Sarah Johnson',
+                email: 'sarah@techinnovations.com',
+                phone: '(555) 987-6543',
+                address: '456 Innovation Ave, Tech City, ST 54321',
+                industry: 'Technology',
+                employees: 25,
+                status: 'active',
+                contractStart: '2024-03-01',
+                contractEnd: '2025-02-28',
+                monthlyValue: 1800,
+                services: ['1', '2'],
+                notes: 'Fast-growing startup. Likely to need additional services as they scale.'
+            },
+            {
+                id: '3',
+                companyName: 'Downtown Medical',
+                contactName: 'Dr. Michael Brown',
+                email: 'mbrown@downtownmedical.com',
+                phone: '(555) 456-7890',
+                address: '789 Health Plaza, Medical District, ST 67890',
+                industry: 'Healthcare',
+                employees: 15,
+                status: 'prospect',
+                contractStart: null,
+                contractEnd: null,
+                monthlyValue: 0,
+                services: [],
+                notes: 'Interested in security and backup solutions. HIPAA compliance is critical.'
+            }
+        ];
+
         const categories = [
             'Apps & Software', 'Security', 'Monitoring', 'Hardware', 
             'Training', 'Phones & Tablets', 'Printing', 'Business Operations'
         ];
 
+        const industries = [
+            'Technology', 'Healthcare', 'Manufacturing', 'Finance', 'Retail', 
+            'Education', 'Legal', 'Real Estate', 'Construction', 'Other'
+        ];
+
         function App() {
             const [services, setServices] = useState(initialServices);
+            const [clients, setClients] = useState(initialClients);
             const [searchTerm, setSearchTerm] = useState('');
             const [selectedCategory, setSelectedCategory] = useState('all');
             const [activeTab, setActiveTab] = useState('dashboard');
             const [showExportModal, setShowExportModal] = useState(false);
+            const [showClientModal, setShowClientModal] = useState(false);
+            const [editingClient, setEditingClient] = useState(null);
+            const [clientSearchTerm, setClientSearchTerm] = useState('');
+            const [selectedIndustry, setSelectedIndustry] = useState('all');
+            const [selectedStatus, setSelectedStatus] = useState('all');
+            const [reportDateRange, setReportDateRange] = useState('30');
+            const chartRef = useRef(null);
+            const revenueChartRef = useRef(null);
 
             // Load data from localStorage on mount
             useEffect(() => {
                 const savedServices = localStorage.getItem('msp-services');
+                const savedClients = localStorage.getItem('msp-clients');
                 if (savedServices) {
                     setServices(JSON.parse(savedServices));
                 }
+                if (savedClients) {
+                    setClients(JSON.parse(savedClients));
+                }
             }, []);
 
-            // Save to localStorage whenever services change
+            // Save to localStorage whenever data changes
             useEffect(() => {
                 localStorage.setItem('msp-services', JSON.stringify(services));
             }, [services]);
+
+            useEffect(() => {
+                localStorage.setItem('msp-clients', JSON.stringify(clients));
+            }, [clients]);
 
             // Filter services
             const filteredServices = services.filter(service => {
@@ -377,12 +604,141 @@
                 return matchesSearch && matchesCategory;
             });
 
+            // Filter clients
+            const filteredClients = clients.filter(client => {
+                const matchesSearch = client.companyName.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+                                     client.contactName.toLowerCase().includes(clientSearchTerm.toLowerCase());
+                const matchesIndustry = selectedIndustry === 'all' || client.industry === selectedIndustry;
+                const matchesStatus = selectedStatus === 'all' || client.status === selectedStatus;
+                return matchesSearch && matchesIndustry && matchesStatus;
+            });
+
             // Stats
             const stats = {
                 totalServices: services.length,
                 activeServices: services.filter(s => s.status === 'active').length,
                 featuredServices: services.filter(s => s.featured).length,
-                categories: [...new Set(services.map(s => s.category))].length
+                categories: [...new Set(services.map(s => s.category))].length,
+                totalClients: clients.length,
+                activeClients: clients.filter(c => c.status === 'active').length,
+                prospects: clients.filter(c => c.status === 'prospect').length,
+                monthlyRevenue: clients.filter(c => c.status === 'active').reduce((sum, c) => sum + c.monthlyValue, 0)
+            };
+
+            // Chart setup
+            useEffect(() => {
+                if (activeTab === 'reports' && chartRef.current) {
+                    const ctx = chartRef.current.getContext('2d');
+                    
+                    // Destroy existing chart if it exists
+                    if (window.servicesChart) {
+                        window.servicesChart.destroy();
+                    }
+                    
+                    const categoryData = categories.map(category => 
+                        services.filter(s => s.category === category).length
+                    );
+                    
+                    window.servicesChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: categories,
+                            datasets: [{
+                                data: categoryData,
+                                backgroundColor: [
+                                    '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+                                    '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                if (activeTab === 'reports' && revenueChartRef.current) {
+                    const ctx = revenueChartRef.current.getContext('2d');
+                    
+                    // Destroy existing chart if it exists
+                    if (window.revenueChart) {
+                        window.revenueChart.destroy();
+                    }
+                    
+                    // Generate sample monthly revenue data
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                    const revenueData = months.map(() => 
+                        Math.floor(Math.random() * 5000) + 15000
+                    );
+                    
+                    window.revenueChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: months,
+                            datasets: [{
+                                label: 'Monthly Revenue',
+                                data: revenueData,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return '$' + value.toLocaleString();
+                                        }
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+                }
+            }, [activeTab, services]);
+
+            // Client management functions
+            const handleAddClient = () => {
+                setEditingClient(null);
+                setShowClientModal(true);
+            };
+
+            const handleEditClient = (client) => {
+                setEditingClient(client);
+                setShowClientModal(true);
+            };
+
+            const handleSaveClient = (clientData) => {
+                if (editingClient) {
+                    setClients(clients.map(c => c.id === editingClient.id ? { ...clientData, id: editingClient.id } : c));
+                } else {
+                    const newClient = { ...clientData, id: Date.now().toString() };
+                    setClients([...clients, newClient]);
+                }
+                setShowClientModal(false);
+                setEditingClient(null);
+            };
+
+            const handleDeleteClient = (clientId) => {
+                if (confirm('Are you sure you want to delete this client?')) {
+                    setClients(clients.filter(c => c.id !== clientId));
+                }
             };
 
             // Export functions
@@ -407,6 +763,29 @@
                 link.download = 'msp-service-catalog.csv';
                 link.click();
                 setShowExportModal(false);
+            };
+
+            const handleExportClientsCSV = () => {
+                const csvData = clients.map(client => ({
+                    CompanyName: client.companyName,
+                    ContactName: client.contactName,
+                    Email: client.email,
+                    Phone: client.phone,
+                    Industry: client.industry,
+                    Employees: client.employees,
+                    Status: client.status,
+                    MonthlyValue: client.monthlyValue,
+                    ContractStart: client.contractStart,
+                    ContractEnd: client.contractEnd,
+                    Services: client.services.map(sId => services.find(s => s.id === sId)?.serviceName).filter(Boolean).join(", ")
+                }));
+                
+                const csv = Papa.unparse(csvData);
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'msp-clients.csv';
+                link.click();
             };
 
             return (
@@ -465,22 +844,34 @@
                                         <div className="value">{stats.activeServices}</div>
                                     </div>
                                     <div className="stat-card">
-                                        <h3>Featured Services</h3>
-                                        <div className="value">{stats.featuredServices}</div>
+                                        <h3>Total Clients</h3>
+                                        <div className="value">{stats.totalClients}</div>
                                     </div>
                                     <div className="stat-card">
-                                        <h3>Categories</h3>
-                                        <div className="value">{stats.categories}</div>
+                                        <h3>Monthly Revenue</h3>
+                                        <div className="value">${stats.monthlyRevenue.toLocaleString()}</div>
                                     </div>
                                 </div>
 
-                                <div className="service-card">
-                                    <h3 style={{marginBottom: '1rem'}}>Quick Actions</h3>
-                                    <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
-                                        <button className="btn btn-primary">➕ Add New Service</button>
-                                        <button className="btn">👥 Manage Clients</button>
-                                        <button className="btn">📊 Generate Report</button>
-                                        <button className="btn" onClick={() => setShowExportModal(true)}>📤 Export Catalog</button>
+                                <div className="two-column">
+                                    <div className="service-card">
+                                        <h3 style={{marginBottom: '1rem'}}>Quick Actions</h3>
+                                        <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
+                                            <button className="btn btn-primary">➕ Add New Service</button>
+                                            <button className="btn btn-success" onClick={handleAddClient}>👥 Add New Client</button>
+                                            <button className="btn" onClick={() => setActiveTab('reports')}>📊 View Reports</button>
+                                            <button className="btn" onClick={() => setShowExportModal(true)}>📤 Export Data</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="service-card">
+                                        <h3 style={{marginBottom: '1rem'}}>Recent Activity</h3>
+                                        <div style={{fontSize: '0.875rem', color: '#6b7280'}}>
+                                            <div style={{marginBottom: '0.5rem'}}>• Office 365 Setup service updated</div>
+                                            <div style={{marginBottom: '0.5rem'}}>• New client "Tech Innovations LLC" added</div>
+                                            <div style={{marginBottom: '0.5rem'}}>• Backup Service pricing modified</div>
+                                            <div>• Monthly report generated</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -518,7 +909,7 @@
                                                     <div className="service-title">{service.serviceName}</div>
                                                     <div className="service-description">{service.shortDescription}</div>
                                                 </div>
-                                                <span className={`badge ${service.status === 'active' ? 'badge-primary' : 'badge-secondary'}`}>
+                                                <span className={`badge ${service.status === 'active' ? 'badge-success' : 'badge-secondary'}`}>
                                                     {service.status}
                                                 </span>
                                             </div>
@@ -547,7 +938,7 @@
                                             <div className="service-actions">
                                                 <button className="btn btn-sm">✏️ Edit</button>
                                                 <button className="btn btn-sm">📋 Copy</button>
-                                                <button className="btn btn-sm" style={{color: '#dc2626'}}>🗑️ Delete</button>
+                                                <button className="btn btn-sm btn-danger">🗑️ Delete</button>
                                             </div>
                                         </div>
                                     ))}
@@ -555,18 +946,202 @@
                             </div>
                         )}
 
-                        {/* Other tabs */}
+                        {/* Clients Tab */}
                         {activeTab === 'clients' && (
-                            <div className="service-card">
-                                <h2>Client Management</h2>
-                                <p>Client management features coming soon...</p>
+                            <div>
+                                <div className="search-controls">
+                                    <input
+                                        type="text"
+                                        placeholder="Search clients..."
+                                        className="search-input"
+                                        value={clientSearchTerm}
+                                        onChange={(e) => setClientSearchTerm(e.target.value)}
+                                    />
+                                    <select 
+                                        className="select"
+                                        value={selectedIndustry}
+                                        onChange={(e) => setSelectedIndustry(e.target.value)}
+                                    >
+                                        <option value="all">All Industries</option>
+                                        {industries.map(industry => (
+                                            <option key={industry} value={industry}>{industry}</option>
+                                        ))}
+                                    </select>
+                                    <select 
+                                        className="select"
+                                        value={selectedStatus}
+                                        onChange={(e) => setSelectedStatus(e.target.value)}
+                                    >
+                                        <option value="all">All Status</option>
+                                        <option value="active">Active</option>
+                                        <option value="prospect">Prospect</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                    <button className="btn btn-primary" onClick={handleAddClient}>➕ Add Client</button>
+                                    <button className="btn" onClick={handleExportClientsCSV}>📤 Export CSV</button>
+                                </div>
+
+                                <div>
+                                    {filteredClients.map(client => (
+                                        <div key={client.id} className="client-card">
+                                            <div className="client-header">
+                                                <div>
+                                                    <div className="client-name">{client.companyName}</div>
+                                                    <div style={{color: '#6b7280', fontSize: '0.875rem'}}>{client.contactName}</div>
+                                                </div>
+                                                <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
+                                                    <span className={`badge ${
+                                                        client.status === 'active' ? 'badge-success' : 
+                                                        client.status === 'prospect' ? 'badge-warning' : 'badge-secondary'
+                                                    }`}>
+                                                        {client.status}
+                                                    </span>
+                                                    <button className="btn btn-sm" onClick={() => handleEditClient(client)}>✏️ Edit</button>
+                                                    <button className="btn btn-sm btn-danger" onClick={() => handleDeleteClient(client.id)}>🗑️</button>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="client-info">
+                                                <div className="info-item">
+                                                    <div className="info-label">Email</div>
+                                                    <div className="info-value">{client.email}</div>
+                                                </div>
+                                                <div className="info-item">
+                                                    <div className="info-label">Phone</div>
+                                                    <div className="info-value">{client.phone}</div>
+                                                </div>
+                                                <div className="info-item">
+                                                    <div className="info-label">Industry</div>
+                                                    <div className="info-value">{client.industry}</div>
+                                                </div>
+                                                <div className="info-item">
+                                                    <div className="info-label">Employees</div>
+                                                    <div className="info-value">{client.employees}</div>
+                                                </div>
+                                                <div className="info-item">
+                                                    <div className="info-label">Monthly Value</div>
+                                                    <div className="info-value">${client.monthlyValue.toLocaleString()}</div>
+                                                </div>
+                                                <div className="info-item">
+                                                    <div className="info-label">Services</div>
+                                                    <div className="info-value">
+                                                        {client.services.map(serviceId => {
+                                                            const service = services.find(s => s.id === serviceId);
+                                                            return service ? (
+                                                                <span key={serviceId} className="badge badge-primary" style={{marginRight: '0.25rem'}}>
+                                                                    {service.serviceName}
+                                                                </span>
+                                                            ) : null;
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {client.notes && (
+                                                <div style={{marginTop: '1rem', padding: '1rem', background: '#f8fafc', borderRadius: '0.375rem'}}>
+                                                    <div className="info-label">Notes</div>
+                                                    <div style={{fontSize: '0.875rem'}}>{client.notes}</div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
 
+                        {/* Reports Tab */}
                         {activeTab === 'reports' && (
-                            <div className="service-card">
-                                <h2>Reports & Analytics</h2>
-                                <p>Reporting features coming soon...</p>
+                            <div>
+                                <div className="report-filters">
+                                    <h3 style={{marginBottom: '1rem'}}>Report Filters</h3>
+                                    <div className="filter-row">
+                                        <div className="form-group">
+                                            <label>Date Range</label>
+                                            <select 
+                                                className="select"
+                                                value={reportDateRange}
+                                                onChange={(e) => setReportDateRange(e.target.value)}
+                                            >
+                                                <option value="7">Last 7 days</option>
+                                                <option value="30">Last 30 days</option>
+                                                <option value="90">Last 90 days</option>
+                                                <option value="365">Last year</option>
+                                            </select>
+                                        </div>
+                                        <button className="btn btn-primary">Generate Report</button>
+                                        <button className="btn">📤 Export PDF</button>
+                                    </div>
+                                </div>
+
+                                <div className="stats-grid">
+                                    <div className="stat-card">
+                                        <h3>Active Clients</h3>
+                                        <div className="value">{stats.activeClients}</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <h3>Prospects</h3>
+                                        <div className="value">{stats.prospects}</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <h3>Monthly Revenue</h3>
+                                        <div className="value">${stats.monthlyRevenue.toLocaleString()}</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <h3>Avg. Client Value</h3>
+                                        <div className="value">
+                                            ${stats.activeClients > 0 ? Math.round(stats.monthlyRevenue / stats.activeClients).toLocaleString() : 0}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="two-column">
+                                    <div className="chart-container">
+                                        <div className="chart-title">Services by Category</div>
+                                        <div style={{height: '300px', position: 'relative'}}>
+                                            <canvas ref={chartRef}></canvas>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="chart-container">
+                                        <div className="chart-title">Revenue Trend</div>
+                                        <div style={{height: '300px', position: 'relative'}}>
+                                            <canvas ref={revenueChartRef}></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="chart-container">
+                                    <div className="chart-title">Client Summary</div>
+                                    <table className="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Company</th>
+                                                <th>Industry</th>
+                                                <th>Status</th>
+                                                <th>Monthly Value</th>
+                                                <th>Services</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {clients.slice(0, 10).map(client => (
+                                                <tr key={client.id}>
+                                                    <td>{client.companyName}</td>
+                                                    <td>{client.industry}</td>
+                                                    <td>
+                                                        <span className={`badge ${
+                                                            client.status === 'active' ? 'badge-success' : 
+                                                            client.status === 'prospect' ? 'badge-warning' : 'badge-secondary'
+                                                        }`}>
+                                                            {client.status}
+                                                        </span>
+                                                    </td>
+                                                    <td>${client.monthlyValue.toLocaleString()}</td>
+                                                    <td>{client.services.length}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -575,13 +1150,16 @@
                     {showExportModal && (
                         <div className="modal" onClick={() => setShowExportModal(false)}>
                             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                                <h2>Export Service Catalog</h2>
+                                <h2>Export Data</h2>
                                 <p style={{marginBottom: '2rem', color: '#6b7280'}}>
-                                    Select a format to export your service catalog.
+                                    Select what you'd like to export.
                                 </p>
-                                <div style={{display: 'flex', gap: '1rem'}}>
+                                <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
                                     <button className="btn btn-primary" onClick={handleExportCSV}>
-                                        Export as CSV
+                                        📋 Export Services as CSV
+                                    </button>
+                                    <button className="btn btn-primary" onClick={handleExportClientsCSV}>
+                                        👥 Export Clients as CSV
                                     </button>
                                     <button className="btn" onClick={() => setShowExportModal(false)}>
                                         Cancel
@@ -590,6 +1168,211 @@
                             </div>
                         </div>
                     )}
+
+                    {/* Client Modal */}
+                    {showClientModal && (
+                        <ClientModal
+                            client={editingClient}
+                            services={services}
+                            industries={industries}
+                            onSave={handleSaveClient}
+                            onClose={() => {
+                                setShowClientModal(false);
+                                setEditingClient(null);
+                            }}
+                        />
+                    )}
+                </div>
+            );
+        }
+
+        // Client Modal Component
+        function ClientModal({ client, services, industries, onSave, onClose }) {
+            const [formData, setFormData] = useState({
+                companyName: client?.companyName || '',
+                contactName: client?.contactName || '',
+                email: client?.email || '',
+                phone: client?.phone || '',
+                address: client?.address || '',
+                industry: client?.industry || industries[0],
+                employees: client?.employees || '',
+                status: client?.status || 'prospect',
+                contractStart: client?.contractStart || '',
+                contractEnd: client?.contractEnd || '',
+                monthlyValue: client?.monthlyValue || 0,
+                services: client?.services || [],
+                notes: client?.notes || ''
+            });
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                onSave({
+                    ...formData,
+                    employees: parseInt(formData.employees) || 0,
+                    monthlyValue: parseFloat(formData.monthlyValue) || 0
+                });
+            };
+
+            const handleServiceToggle = (serviceId) => {
+                const newServices = formData.services.includes(serviceId)
+                    ? formData.services.filter(id => id !== serviceId)
+                    : [...formData.services, serviceId];
+                setFormData({ ...formData, services: newServices });
+            };
+
+            return (
+                <div className="modal" onClick={onClose}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h2>{client ? 'Edit Client' : 'Add New Client'}</h2>
+                        <form onSubmit={handleSubmit}>
+                            <div className="two-column">
+                                <div className="form-group">
+                                    <label>Company Name *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.companyName}
+                                        onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Contact Name *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={formData.contactName}
+                                        onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="two-column">
+                                <div className="form-group">
+                                    <label>Email *</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Phone</label>
+                                    <input
+                                        type="tel"
+                                        value={formData.phone}
+                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Address</label>
+                                <textarea
+                                    value={formData.address}
+                                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="two-column">
+                                <div className="form-group">
+                                    <label>Industry</label>
+                                    <select
+                                        value={formData.industry}
+                                        onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                                    >
+                                        {industries.map(industry => (
+                                            <option key={industry} value={industry}>{industry}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label>Employees</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={formData.employees}
+                                        onChange={(e) => setFormData({ ...formData, employees: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="two-column">
+                                <div className="form-group">
+                                    <label>Status</label>
+                                    <select
+                                        value={formData.status}
+                                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                    >
+                                        <option value="prospect">Prospect</option>
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label>Monthly Value ($)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={formData.monthlyValue}
+                                        onChange={(e) => setFormData({ ...formData, monthlyValue: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="two-column">
+                                <div className="form-group">
+                                    <label>Contract Start</label>
+                                    <input
+                                        type="date"
+                                        value={formData.contractStart}
+                                        onChange={(e) => setFormData({ ...formData, contractStart: e.target.value })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Contract End</label>
+                                    <input
+                                        type="date"
+                                        value={formData.contractEnd}
+                                        onChange={(e) => setFormData({ ...formData, contractEnd: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Services</label>
+                                <div style={{display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem'}}>
+                                    {services.map(service => (
+                                        <label key={service.id} style={{display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer'}}>
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.services.includes(service.id)}
+                                                onChange={() => handleServiceToggle(service.id)}
+                                            />
+                                            <span className="badge badge-secondary">{service.serviceName}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Notes</label>
+                                <textarea
+                                    value={formData.notes}
+                                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                                    placeholder="Additional notes about this client..."
+                                />
+                            </div>
+
+                            <div className="form-actions">
+                                <button type="button" className="btn" onClick={onClose}>Cancel</button>
+                                <button type="submit" className="btn btn-primary">
+                                    {client ? 'Update Client' : 'Add Client'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             );
         }
@@ -598,3 +1381,4 @@
     </script>
 </body>
 </html>
+
