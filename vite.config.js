@@ -5,7 +5,7 @@ import path from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react( )],
-  base: '/msp-servicecatalog/', // Replace with your actual repository name
+  base: '/msp-servicecatalog/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
