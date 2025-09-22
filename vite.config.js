@@ -4,7 +4,12 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
-  base: './', // Use relative paths instead of absolute
+  base: './',
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
