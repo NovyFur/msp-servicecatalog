@@ -1,13 +1,600 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MSP Service Catalog Manager</title>
-  </head>
-  <body>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .header {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 1.875rem;
+            font-weight: bold;
+            color: #1e293b;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            background: white;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover {
+            background: #f3f4f6;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 2rem;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+        }
+        
+        .tab.active {
+            border-bottom-color: #3b82f6;
+            color: #3b82f6;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr ));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-card h3 {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1e293b;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .service-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.2s;
+        }
+        
+        .service-card:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .service-header {
+            display: flex;
+            justify-content: between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .service-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .service-description {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        
+        .service-details {
+            margin: 1rem 0;
+        }
+        
+        .service-detail {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .service-detail .label {
+            color: #6b7280;
+        }
+        
+        .service-detail .value {
+            font-weight: 600;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .badge-primary {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        
+        .badge-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .service-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        
+        .search-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            align-items: center;
+        }
+        
+        .search-input {
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            min-width: 250px;
+        }
+        
+        .select {
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            background: white;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal h2 {
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+        }
+        
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .tags {
+            display: flex;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Sample data
+        const initialServices = [
+            {
+                id: '1',
+                serviceName: 'Office 365 Setup',
+                category: 'Apps & Software',
+                shortDescription: 'Complete Office 365 setup and configuration',
+                description: 'Microsoft Office 365 setup including user accounts, email configuration, and basic training.',
+                pricing: { type: 'fixed', amount: 150, currency: 'USD', period: 'one-time', displayText: '$150 one-time' },
+                serviceLevel: { responseTime: '4 hours', resolutionTime: '24 hours', availability: '9 AM - 5 PM', emergencySupport: false },
+                status: 'active',
+                featured: true,
+                tags: ['office', 'email', 'productivity']
+            },
+            {
+                id: '2',
+                serviceName: 'Network Monitoring',
+                category: 'Monitoring',
+                shortDescription: '24/7 network monitoring and alerting',
+                description: 'Continuous monitoring of network infrastructure with proactive alerting and issue resolution.',
+                pricing: { type: 'fixed', amount: 99, currency: 'USD', period: 'monthly', displayText: '$99/month' },
+                serviceLevel: { responseTime: '15 minutes', resolutionTime: '2 hours', availability: '24/7', emergencySupport: true },
+                status: 'active',
+                featured: true,
+                tags: ['monitoring', 'network', 'proactive']
+            },
+            {
+                id: '3',
+                serviceName: 'Backup Service',
+                category: 'Security',
+                shortDescription: 'Automated backup and recovery solution',
+                description: 'Comprehensive backup solution with automated daily backups and quick recovery options.',
+                pricing: { type: 'fixed', amount: 75, currency: 'USD', period: 'monthly', displayText: '$75/month' },
+                serviceLevel: { responseTime: '2 hours', resolutionTime: '4 hours', availability: '9 AM - 6 PM', emergencySupport: true },
+                status: 'active',
+                featured: false,
+                tags: ['backup', 'security', 'recovery']
+            }
+        ];
+
+        const categories = [
+            'Apps & Software', 'Security', 'Monitoring', 'Hardware', 
+            'Training', 'Phones & Tablets', 'Printing', 'Business Operations'
+        ];
+
+        function App() {
+            const [services, setServices] = useState(initialServices);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [selectedCategory, setSelectedCategory] = useState('all');
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [showExportModal, setShowExportModal] = useState(false);
+
+            // Load data from localStorage on mount
+            useEffect(() => {
+                const savedServices = localStorage.getItem('msp-services');
+                if (savedServices) {
+                    setServices(JSON.parse(savedServices));
+                }
+            }, []);
+
+            // Save to localStorage whenever services change
+            useEffect(() => {
+                localStorage.setItem('msp-services', JSON.stringify(services));
+            }, [services]);
+
+            // Filter services
+            const filteredServices = services.filter(service => {
+                const matchesSearch = service.serviceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                     service.description.toLowerCase().includes(searchTerm.toLowerCase());
+                const matchesCategory = selectedCategory === 'all' || service.category === selectedCategory;
+                return matchesSearch && matchesCategory;
+            });
+
+            // Stats
+            const stats = {
+                totalServices: services.length,
+                activeServices: services.filter(s => s.status === 'active').length,
+                featuredServices: services.filter(s => s.featured).length,
+                categories: [...new Set(services.map(s => s.category))].length
+            };
+
+            // Export functions
+            const handleExportCSV = () => {
+                const csvData = services.map(service => ({
+                    ServiceName: service.serviceName,
+                    Category: service.category,
+                    ShortDescription: service.shortDescription,
+                    Description: service.description,
+                    Pricing: service.pricing.displayText,
+                    ResponseTime: service.serviceLevel.responseTime,
+                    ResolutionTime: service.serviceLevel.resolutionTime,
+                    Availability: service.serviceLevel.availability,
+                    EmergencySupport: service.serviceLevel.emergencySupport,
+                    Tags: service.tags.join(", ")
+                }));
+                
+                const csv = Papa.unparse(csvData);
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'msp-service-catalog.csv';
+                link.click();
+                setShowExportModal(false);
+            };
+
+            return (
+                <div>
+                    {/* Header */}
+                    <div className="header">
+                        <div className="container">
+                            <div className="header-content">
+                                <h1>MSP Service Catalog</h1>
+                                <button className="btn" onClick={() => setShowExportModal(true)}>
+                                    📤 Export
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="container">
+                        {/* Tabs */}
+                        <div className="tabs">
+                            <button 
+                                className={`tab ${activeTab === 'dashboard' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('dashboard')}
+                            >
+                                Dashboard
+                            </button>
+                            <button 
+                                className={`tab ${activeTab === 'services' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('services')}
+                            >
+                                Services
+                            </button>
+                            <button 
+                                className={`tab ${activeTab === 'clients' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('clients')}
+                            >
+                                Clients
+                            </button>
+                            <button 
+                                className={`tab ${activeTab === 'reports' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('reports')}
+                            >
+                                Reports
+                            </button>
+                        </div>
+
+                        {/* Dashboard Tab */}
+                        {activeTab === 'dashboard' && (
+                            <div>
+                                <div className="stats-grid">
+                                    <div className="stat-card">
+                                        <h3>Total Services</h3>
+                                        <div className="value">{stats.totalServices}</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <h3>Active Services</h3>
+                                        <div className="value">{stats.activeServices}</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <h3>Featured Services</h3>
+                                        <div className="value">{stats.featuredServices}</div>
+                                    </div>
+                                    <div className="stat-card">
+                                        <h3>Categories</h3>
+                                        <div className="value">{stats.categories}</div>
+                                    </div>
+                                </div>
+
+                                <div className="service-card">
+                                    <h3 style={{marginBottom: '1rem'}}>Quick Actions</h3>
+                                    <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap'}}>
+                                        <button className="btn btn-primary">➕ Add New Service</button>
+                                        <button className="btn">👥 Manage Clients</button>
+                                        <button className="btn">📊 Generate Report</button>
+                                        <button className="btn" onClick={() => setShowExportModal(true)}>📤 Export Catalog</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Services Tab */}
+                        {activeTab === 'services' && (
+                            <div>
+                                <div className="search-controls">
+                                    <input
+                                        type="text"
+                                        placeholder="Search services..."
+                                        className="search-input"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                    <select 
+                                        className="select"
+                                        value={selectedCategory}
+                                        onChange={(e) => setSelectedCategory(e.target.value)}
+                                    >
+                                        <option value="all">All Categories</option>
+                                        {categories.map(category => (
+                                            <option key={category} value={category}>{category}</option>
+                                        ))}
+                                    </select>
+                                    <button className="btn btn-primary">➕ Add Service</button>
+                                </div>
+
+                                <div className="services-grid">
+                                    {filteredServices.map(service => (
+                                        <div key={service.id} className="service-card">
+                                            <div className="service-header">
+                                                <div>
+                                                    <div className="service-title">{service.serviceName}</div>
+                                                    <div className="service-description">{service.shortDescription}</div>
+                                                </div>
+                                                <span className={`badge ${service.status === 'active' ? 'badge-primary' : 'badge-secondary'}`}>
+                                                    {service.status}
+                                                </span>
+                                            </div>
+                                            
+                                            <div className="service-details">
+                                                <div className="service-detail">
+                                                    <span className="label">Category:</span>
+                                                    <span className="badge badge-secondary">{service.category}</span>
+                                                </div>
+                                                <div className="service-detail">
+                                                    <span className="label">Price:</span>
+                                                    <span className="value">{service.pricing.displayText}</span>
+                                                </div>
+                                                <div className="service-detail">
+                                                    <span className="label">Response:</span>
+                                                    <span className="value">{service.serviceLevel.responseTime}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="tags">
+                                                {service.tags.map(tag => (
+                                                    <span key={tag} className="badge badge-secondary">{tag}</span>
+                                                ))}
+                                            </div>
+
+                                            <div className="service-actions">
+                                                <button className="btn btn-sm">✏️ Edit</button>
+                                                <button className="btn btn-sm">📋 Copy</button>
+                                                <button className="btn btn-sm" style={{color: '#dc2626'}}>🗑️ Delete</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Other tabs */}
+                        {activeTab === 'clients' && (
+                            <div className="service-card">
+                                <h2>Client Management</h2>
+                                <p>Client management features coming soon...</p>
+                            </div>
+                        )}
+
+                        {activeTab === 'reports' && (
+                            <div className="service-card">
+                                <h2>Reports & Analytics</h2>
+                                <p>Reporting features coming soon...</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Export Modal */}
+                    {showExportModal && (
+                        <div className="modal" onClick={() => setShowExportModal(false)}>
+                            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                                <h2>Export Service Catalog</h2>
+                                <p style={{marginBottom: '2rem', color: '#6b7280'}}>
+                                    Select a format to export your service catalog.
+                                </p>
+                                <div style={{display: 'flex', gap: '1rem'}}>
+                                    <button className="btn btn-primary" onClick={handleExportCSV}>
+                                        Export as CSV
+                                    </button>
+                                    <button className="btn" onClick={() => setShowExportModal(false)}>
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
 </html>
